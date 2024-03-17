@@ -1,7 +1,7 @@
 # parameters
-ARG REPO_NAME="<REPO_NAME_HERE>"
-ARG DESCRIPTION="<DESCRIPTION_HERE>"
-ARG MAINTAINER="<YOUR_FULL_NAME> (<YOUR_EMAIL_ADDRESS>)"
+ARG REPO_NAME="dareduckie "
+ARG DESCRIPTION="Control motors test"
+ARG MAINTAINER="Liam Fletcher"
 # pick an icon from: https://fontawesome.com/v4.7.0/icons/
 ARG ICON="cube"
 
@@ -52,13 +52,13 @@ ENV DT_MODULE_TYPE="${REPO_NAME}" \
 
 # install apt dependencies
 COPY ./dependencies-apt.txt "${REPO_PATH}/"
-RUN dt-apt-install ${REPO_PATH}/dependencies-apt.txt
+# RUN dt-apt-install ${REPO_PATH}/dependencies-apt.txt
 
 # install python3 dependencies
 ARG PIP_INDEX_URL="https://pypi.org/simple"
 ENV PIP_INDEX_URL=${PIP_INDEX_URL}
 COPY ./dependencies-py3.* "${REPO_PATH}/"
-RUN dt-pip3-install "${REPO_PATH}/dependencies-py3.*"
+# RUN dt-pip3-install "${REPO_PATH}/dependencies-py3.*"
 
 # copy the source code
 COPY ./packages "${REPO_PATH}/packages"
