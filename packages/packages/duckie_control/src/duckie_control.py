@@ -124,6 +124,7 @@ class WheelControlNode(DTROS):
         self.stop()
         rospy.sleep(1)
         self.sensor_reset()
+        print("Forward movement completed")
 
     def move_backward(self, distance=None):
         if distance is None:
@@ -132,29 +133,34 @@ class WheelControlNode(DTROS):
         self.stop()
         rospy.sleep(1)
         self.sensor_reset()
+        print("Backward movement completed")
 
     def turn_left(self, angle = None):
         if angle is None:
             angle = self.turn_angle
         self.move(0.0, angle)
         self.stop()
+        print("Left turn completed")
         rospy.sleep(1)
         self.sensor_reset()
         self.move(self.turn_then_forward_distance, 0.0)
         self.stop()
         rospy.sleep(1)
         self.sensor_reset()
+        print("Forward movement completed")
 
     def turn_right(self, angle = None):
         if angle is None:
             angle = self.turn_angle
         self.move(0.0, -angle)
+        print("Right turn completed")
         self.stop()
         rospy.sleep(1)
         self.sensor_reset()
         self.move(self.turn_then_forward_distance, 0.0)
         rospy.sleep(1)
         self.sensor_reset()
+        print("Forward movement completed")
 
     def sensor_reset(self):
         self.store_initial_encoder_values()
@@ -177,13 +183,13 @@ class WheelControlNode(DTROS):
             current_distance = self.current_distance
             current_angle = self.orientation_filtered
 
-            print(f"current distance: {current_distance}")
-            print(f"current angle(deg): {math.degrees(current_angle)}")
+            # print(f"current distance: {current_distance}")
+            # print(f"current angle(deg): {math.degrees(current_angle)}")
 
             # Calculate the error and apply PD control
             distance_error = desired_distance - current_distance
             angle_error = desired_angle - current_angle
-            print(f"Angle error: {angle_error}")
+            # print(f"Angle error: {angle_error}")
             distance_output = self.kp_distance * distance_error + self.kd_distance * (distance_error - previous_distance_error)
             angle_output = self.kp_angle * angle_error + self.kd_angle * (angle_error - previous_angle_error)
 
@@ -221,6 +227,38 @@ class WheelControlNode(DTROS):
         stop_message = WheelsCmdStamped(vel_left=0, vel_right=0)
         self._publisher.publish(stop_message)
 
+    # def run(self):
+    #     host = '0.0.0.0'  # Change to the desired host IP address
+    #     port = 12345  # Change to the desired port number
+
+    #     print(f"Starting server on {host}:{port}")
+    #     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+    #         s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    #         s.bind((host, port))
+    #         s.listen()
+
+    #         while not rospy.is_shutdown():
+    #             print("Waiting for a connection...")
+    #             try:
+    #                 conn, addr = s.accept()
+    #             except socket.timeout:
+    #                 continue  # Continue waiting for a connection if a timeout occurs
+
+    #             print(f"Connected by {addr}")
+                
+    #             try:
+    #                 while not rospy.is_shutdown():
+    #                     data = conn.recv(1024).decode().strip()
+    #                     if not data:
+    #                         break
+    #                     print(f"Received command: {data}")
+    #                     self.process_command(data)
+    #             except socket.error as e:
+    #                 print(f"Socket error: {e}")
+    #             finally:
+    #                 conn.close()
+    #                 print(f"Connection closed by {addr}")
+
     def run(self):
         host = '0.0.0.0'  # Change to the desired host IP address
         port = 12345  # Change to the desired port number
@@ -230,27 +268,31 @@ class WheelControlNode(DTROS):
             s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             s.bind((host, port))
             s.listen()
+            s.settimeout(1.0)
 
             while not rospy.is_shutdown():
                 print("Waiting for a connection...")
-                conn, addr = s.accept()
-                with conn:
-                    print(f"Connected by {addr}")
+                try:
+                    conn, addr = s.accept()
+                except socket.timeout:
+                    continue
+                print(f"Connected by {addr}")
+            
+                try:
                     while not rospy.is_shutdown():
-                        try:
-                            conn.setblocking(False)
-                            data = conn.recv(1024).decode().strip()
-                            if data:
-                                print(f"Received command: {data}")
-                                self.process_command(data)
-                            else:
-                                if rospy.is_shutdown():
-                                    break
-                                rospy.sleep(0.1)
-                        except socket.error as e:
-                            if rospy.is_shutdown():
-                                break
-                            rospy.sleep(0.1)
+                        data = conn.recv(1024).decode().strip()
+                        if not data:
+                            break
+                        print(f"Received command: {data}")
+                        self.process_command(data)
+                except socket.error as e:
+                    print(f"Socket error: {e}")
+                finally:
+                    conn.close()
+                    print(f"Connection closed by {addr}")
+
+
+    
 
     def process_command(self, command):
         print(f"Processing command: {command}")
